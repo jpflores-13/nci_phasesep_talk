@@ -4,6 +4,7 @@ Plots and analyses for Doug's 2022 NCI Biology & Biophysics of the Nucleus Sympo
 
 ## How to access "raw" data
 
+Ensure that you are on campus WiFi or using the campus VPN.
 Access raw data from UNC's longleaf cluster with this command:
 
 ``` bash
