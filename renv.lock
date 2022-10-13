@@ -651,7 +651,7 @@
       "RemoteUsername": "EricSDavis",
       "RemoteRef": "1.1.2",
       "RemoteSha": "aa8fe75f4700f012cbd2f48803535bb14fe590ff",
-      "Hash": "f5f4636fad27d28eaa036b526faf86b8",
+      "Hash": "3c77d24f9ca68e4c15e37b69f85bc0e0",
       "Requirements": [
         "GenomicRanges",
         "IRanges",
