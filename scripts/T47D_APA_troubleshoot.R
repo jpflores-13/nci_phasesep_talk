@@ -1,26 +1,27 @@
-## Generate APA matrices to look for outlier
-## interactions.
+## Generate APA matrices for T47D (Amat et al 2019) data
 
 ## Code to install the development
 ## version of mariner:
-if (!require("mariner", quietly = TRUE)) {
-  remotes::install_github("EricSDavis/mariner@dev", force = TRUE)
-}
+# if (!require("mariner", quietly = TRUE)) {
+#   remotes::install_github("EricSDavis/mariner@dev", force = TRUE)
+# }
 
-## Install hictoolsr but exclude conflicting functions
-if (!require("hictoolsr", quietly = TRUE,
-             exclude=c("as_ginteractions",
-                       "makeGInteractionsFromDataFrame"))) {
-  remotes::install_github("EricSDavis/hictoolsr@1.1.2", force = TRUE)
-}
+# ## Install hictoolsr but exclude conflicting functions
+# if (!require("hictoolsr", quietly = TRUE,
+#              exclude=c("as_ginteractions",
+#                        "makeGInteractionsFromDataFrame"))) {
+#   remotes::install_github("EricSDavis/hictoolsr@1.1.2", force = TRUE)
+# }
 
 
 ## Load required libraries
 library(InteractionSet)
 library(mariner)
+library(hictoolsr)
 library(plotgardener)
 library(RColorBrewer)
 library(purrr)
+library(glue)
 
 ## Load utility functions
 source("scripts/utils/findBadLoops.R")
@@ -28,20 +29,20 @@ source("scripts/utils/layoutFunctions.R")
 source("scripts/utils/plotApas.R")
 
 ## Define hic files
-hicFiles <- list.files("data/raw/hic/hicFiles/YAPP",
-                       full.names = TRUE)
+hicFiles <- c("data/raw/hic/hicFiles/HYPE/cont/HYPE_T47D_None_inter_30.hic",
+              "data/raw/hic/hicFiles/HYPE/nacl/HYPE_T47D_NaCl_inter_30.hic")
 
 ## Load differential loop calls
-allLoops <- readRDS("data/raw/hic/loops/YAPP_hic_diff_loopCounts.rds")
+noDroso_loops <- readRDS("data/raw/hic/loops/YAPP_hic_diff_loopCounts_noDroso.rds")
 
 ## Separate into gained/lost loops
 gainedLoops <- 
-  allLoops |> 
+  noDroso_loops |> 
   subset(padj < 0.1 & log2FoldChange > 0) |>
   reduceRegions()
 
 lostLoops <-
-  allLoops |> 
+  noDroso_loops |> 
   subset(padj < 0.1 & log2FoldChange < 0) |>
   reduceRegions()
 
@@ -55,11 +56,13 @@ gainedLoops <- filterBedpe(gainedLoops, res = res, buffer = buffer)
 lostLoops <- filterBedpe(lostLoops, res=res, buffer = buffer)
 
 ## Expand pixels to matrices and extract
+
 gainedIset <- 
   pixelsToMatrices(gainedLoops, buffer) |>
   pullHicMatrices(binSize = res,
                   files = hicFiles,
                   norm = norm)
+
 lostIset <- 
   pixelsToMatrices(lostLoops, buffer) |>
   pullHicMatrices(binSize = res,
@@ -77,12 +80,12 @@ aggLostCont <-
   aperm(c(3,4,1,2)) |>
   {\(x) apply(x[,,,1], c(1,2), sum)}()
 
-aggGainedSorb <- 
+aggGainedNacl <- 
   assay(gainedIset) |>
   aperm(c(3,4,1,2)) |>
   {\(x) apply(x[,,,2], c(1,2), sum)}()
 
-aggLostSorb <- 
+aggLostNacl <- 
   assay(lostIset) |>
   aperm(c(3,4,1,2)) |>
   {\(x) apply(x[,,,2], c(1,2), sum)}()
@@ -98,8 +101,8 @@ gainedBadIndices <-
   aperm(c(3,4,1,2)) |>
   {\(x) {
     cont <- findBadLoops(x[,,,1])
-    sorb <- findBadLoops(x[,,,2])
-    sort(unique(c(cont, sorb)))
+    nacl <- findBadLoops(x[,,,2])
+    sort(unique(c(cont, nacl)))
   }}() 
 
 ## Indices of loops with missing values
@@ -110,8 +113,8 @@ lostBadIndices <-
   aperm(c(3,4,1,2)) |>
   {\(x) {
     cont <- findBadLoops(x[,,,1])
-    sorb <- findBadLoops(x[,,,2])
-    sort(unique(c(cont, sorb)))
+    nacl <- findBadLoops(x[,,,2])
+    sort(unique(c(cont, nacl)))
   }}() 
 
 ## Define which loops to accept by removing
@@ -131,12 +134,12 @@ aggLostContClean <-
   aperm(c(3,4,1,2)) |>
   {\(x) apply(x[,,,1], c(1,2), sum)}()
 
-aggGainedSorbClean <- 
+aggGainedNaclClean <- 
   assay(gainedIset[gainedAccept]) |>
   aperm(c(3,4,1,2)) |>
   {\(x) apply(x[,,,2], c(1,2), sum)}()
 
-aggLostSorbClean <- 
+aggLostNaclClean <- 
   assay(lostIset[lostAccept]) |>
   aperm(c(3,4,1,2)) |>
   {\(x) apply(x[,,,2], c(1,2), sum)}()
@@ -145,13 +148,38 @@ aggLostSorbClean <-
 ## Visualize APA with plotgardener ---------------------------------------------
 
 ## Before
-pdf("plots/YAPP_troubleshootAPA_before.pdf", width = 4, height = 4)
-plotApas(apas = list(aggGainedCont, aggGainedSorb,
-                     aggLostCont, aggLostSorb))
-dev.off()
+pdf("plots/T47D_APA_troubleshoot.pdf", width = 2, height = 2)
 
-## After
-pdf("plots/YAPP_troubleshootAPA_after.pdf", width = 4, height = 4)
-plotApas(apas = list(aggGainedContClean, aggGainedSorbClean,
-                     aggLostContClean, aggLostSorbClean))
+pageCreate(width = 2, height = 2, showGuides = F)
+
+## Define common params
+
+plotApa(apa = aggGainedNaclClean,
+        x = 0.25,
+        y = 0.25,
+        width = 1.5,
+        height = 1.5,
+        zrange = c(0,1200),
+        palette = colorRampPalette(brewer.pal(9, 'YlGnBu')),
+        just = c("left", "top")) |> 
+  annoHeatmapLegend(orientation = "h",
+                    fontcolor = "black",
+                    height = 0.1,
+                    width = 1.5,
+                    x = 0.25,
+                    y = 1.85)
+
+## Annotate rows
+plotText(label = "NaCl",
+         x = 0.2,
+         y = 1,
+         rot = 90,
+         just = c("center", "bottom"))
+
+## Annotate columns
+plotText(label = "T47D Gained Loops",
+         x = 1,
+         y = 0.2,
+         just = c("center", "bottom"))
+
 dev.off()

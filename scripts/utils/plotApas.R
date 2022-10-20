@@ -28,7 +28,7 @@ plotApas <- function(apas) {
   
   ## Normalize to center pixels of columns
   centerPixels <- lapply(apas, \(x) x[buffer+1, buffer+1]) |> unlist()
-  # zCol1 <- c(0, 1500)
+  # zCol1 <- c(0, 1250)
   zCol1 <- c(0, max(centerPixels[1:2]))
   zCol2 <- c(0, max(centerPixels[3:4]))
   zranges <- list(zCol1, zCol1, zCol2, zCol2)

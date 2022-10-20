@@ -14,8 +14,8 @@ plots/troubleshootAPA_after.pdf:\
 	scripts/utils/findBadLoops.R\
 	scripts/utils/layoutFunctions.R\
 	scripts/utils/plotApas.R\
-	data/raw/hic/hicFiles/YAPP_HEK_control_inter_30.hic\
-	data/raw/hic/hicFiles/YAPP_HEK_sorbitol_inter_30.hic\
+	data/raw/hic/hicFiles/YAPP/YAPP_HEK_control_inter_30.hic\
+	data/raw/hic/hicFiles/YAPP/YAPP_HEK_sorbitol_inter_30.hic\
 	data/raw/hic/loops/YAPP_hic_diff_loopCounts.rds\
 	scripts/troubleshootAPA.R
 		mkdir -p plots
